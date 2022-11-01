@@ -1,22 +1,25 @@
 {
-  "name": "antiraid-v6",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Anti-Raid/bot.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Anti-Raid/bot/issues"
-  },
-  "homepage": "https://github.com/Anti-Raid/bot#readme",
-  "dependencies": {
-    "discord.js": "^14.6.0"
-  }
+	"name": "antiraid-v6",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"dev": "nodemon .",
+		"format": "prettier --write --plugin-search-dir=. ."
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Anti-Raid/bot.git"
+	},
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/Anti-Raid/bot/issues"
+	},
+	"homepage": "https://github.com/Anti-Raid/bot#readme",
+	"dependencies": {
+		"discord.js": "^14.6.0",
+		"prettier": "^2.7.1"
+	}
 }
