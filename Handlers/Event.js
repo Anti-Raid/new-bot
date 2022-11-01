@@ -1,12 +1,8 @@
-const {
-	readdirSync,
-} = require('fs');
-const {
-	join,
-} = require('path');
+const { readdirSync } = require('fs');
+const { join } = require('path');
 const filePath = join(__dirname, '..', 'Events');
-const ascii = require("ascii-table")
-const table = new ascii('Events Check')
+const ascii = require('ascii-table');
+const table = new ascii('Events Check');
 
 module.exports.run = async (client) => {
 	const eventFiles = readdirSync(filePath);
@@ -21,9 +17,8 @@ module.exports.run = async (client) => {
 			client.events.set(eventName, event);
 			if (event.once) client.once(eventName, (...eventArgs) => event.run(...eventArgs, client));
 			if (!event.once) client.on(eventName, (...eventArgs) => event.run(...eventArgs, client));
-
 		}
-	await table.addRow(eventName, "✔", "Loaded")
+		await table.addRow(eventName, '✔', 'Loaded');
 	}
-	console.log(table.toString())
+	console.log(table.toString());
 };
