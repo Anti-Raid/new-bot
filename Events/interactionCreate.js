@@ -1,5 +1,5 @@
 const { CommandInteraction } = require('discord.js');
-
+const database = require("../database/handler")
 module.exports = {
 	name: 'interactionCreate',
 	/**
@@ -12,8 +12,7 @@ module.exports = {
 				content: 'There was an error while executing this command!',
 				ephemeral: true
 			});
-
 		const command = interaction.client.commands.get(interaction.commandName);
-		command.run(interaction);
+		command.run(interaction, database);
 	}
 };

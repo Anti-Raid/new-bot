@@ -12,4 +12,4 @@ for (const loaderFile of readdirSync(loadersPath).filter((cmdFile) => cmdFile.en
 	const loader = require(`${loadersPath}/${loaderFile}`);
 	loader.run(client);
 }
-client.login(process.env.token);
+client.login(process.env.alpha_token);

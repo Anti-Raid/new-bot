@@ -8,7 +8,7 @@ const deploy = process.argv[2];
 const commands = [];
 const commandFiles = fs.readdirSync('./Commands').filter((file) => file.endsWith('.js'));
 
-const clientId = '849331145862283275';
+const clientId = '977585556932395009';
 const guildId = '822794927754706975';
 
 for (const file of commandFiles) {
@@ -16,7 +16,7 @@ for (const file of commandFiles) {
 	if (command.data) commands.push(command.data.toJSON());
 }
 
-const rest = new REST({ version: '9' }).setToken(process.env.token);
+const rest = new REST({ version: '9' }).setToken(process.env.alpha_token);
 
 (async () => {
 	try {

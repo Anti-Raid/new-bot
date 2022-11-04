@@ -6,10 +6,28 @@ module.exports = {
 	 *
 	 * @param {CommandInteraction} interaction
 	 */
-	run: async (interaction) => {
-		interaction.reply({
+	run: async (interaction, database) => {
+		const message = await interaction.reply({
+            content: "",
+			embeds: [new EmbedBuilder().setColor('Orange').setDescription(`Checking Discord Websocket Latency & Discord Interaction Roundtrip Latency...`)],
+            fetchReply: true,
+        });
+        const interactionLatency = Math.round(
+            message.createdTimestamp - interaction.createdTimestamp
+        );
+
+		
+		message.edit({
 			embeds: [
-				new EmbedBuilder().setDescription(`The bot ping is \`${interaction.client.ws.ping}\`ms`)
+				new EmbedBuilder().setColor('Blue').addFields({
+					name: `Discord Websocket Latency`,
+					value: `\`${interaction.client.ws.ping}\`ms`,
+					inline: true
+				}, {
+					name: `Discord Interaction Roundtrip Latency`,
+					value: `\`${interactionLatency}\`ms`,
+					inline:true
+				})
 			]
 		});
 	}
