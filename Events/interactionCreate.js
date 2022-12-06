@@ -1,5 +1,6 @@
 const { CommandInteraction } = require('discord.js');
 const database = require("../database/handler")
+const fetch = require("node-fetch")
 module.exports = {
 	name: 'interactionCreate',
 	/**
@@ -13,6 +14,6 @@ module.exports = {
 				ephemeral: true
 			});
 		const command = interaction.client.commands.get(interaction.commandName);
-		command.run(interaction, database);
+		command.run(interaction, database, fetch);
 	}
 };

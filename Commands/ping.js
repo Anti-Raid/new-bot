@@ -6,7 +6,7 @@ module.exports = {
 	 *
 	 * @param {CommandInteraction} interaction
 	 */
-	run: async (interaction, database) => {
+	run: async (interaction, database, fetch) => {
 		const message = await interaction.reply({
             content: "",
 			embeds: [new EmbedBuilder().setColor('Orange').setDescription(`Checking Discord Websocket Latency & Discord Interaction Roundtrip Latency...`)],
