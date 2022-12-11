@@ -18,7 +18,7 @@ require("dotenv").config();
 
 // Create Discord Client
 const client = new Client({
-	intents: [GatewayIntentBits.Guilds],
+	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
 });
 
 // Discord Client Additions
@@ -57,8 +57,8 @@ const commandFiles = fs
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
 	client.commands.set(command.data.name, command);
-    commandsTable.addRow(command.data.name, "✔", "Loaded");
-};
+	commandsTable.addRow(command.data.name, "✔", "Loaded");
+}
 
 // Buttons
 client.buttons = new Map();
@@ -69,7 +69,7 @@ const buttonFiles = fs
 for (const file of buttonFiles) {
 	const button = require(`./buttons/${file}`);
 	client.buttons.set(button.data.name.split("-")[0], button);
-    buttonsTable.addRow(button.data.name, "✔", "Loaded");
+	buttonsTable.addRow(button.data.name, "✔", "Loaded");
 }
 
 // Modals
@@ -81,7 +81,7 @@ const modalFiles = fs
 for (const file of modalFiles) {
 	const modal = require(`./modals/${file}`);
 	client.modals.set(modal.data.name, modal);
-    modalsTable.addRow(modal.data.name, "✔", "Loaded");
+	modalsTable.addRow(modal.data.name, "✔", "Loaded");
 }
 
 console.log(commandsTable.toString());
@@ -90,46 +90,20 @@ console.log(modalsTable.toString());
 
 // Discord Guild Member Update Event
 client.on(Events.GuildMemberUpdate, async (oldInfo, newInfo) => {
-	const allowedRoles = [
-		{
-			name: "Owner",
-			mainGuild: "1008472299239903242",
-			staffGuild: "1047781197738147882",
-		},
-		{
-			name: "Administrator",
-			mainGuild: "1001584270126633041",
-			staffGuild: "1047781198539259914",
-		},
-		{
-			name: "Staff Manager",
-			mainGuild: "1028636226015739914",
-			staffGuild: "1047781199235530764",
-		},
-		{
-			name: "Developer",
-			mainGuild: "1001629848596385833",
-			staffGuild: "1047781199973724160",
-		},
-		{
-			name: "Moderator",
-			mainGuild: "1001584438314008777",
-			staffGuild: "1047781200707735612",
-		},
-		{
-			name: "Select Social Moderator",
-			mainGuild: "1030233535941988505",
-			staffGuild: "1047781201051660339",
-		},
-		{
-			name: "Bot Reviewer",
-			mainGuild: "1001610329379328101",
-			staffGuild: "1047781202293170276",
-		},
+	let allowedRoles = [
+		{ name: "Staff Manager", id: "1037860906505355274" },
+		{ name: "Web Administrator", id: "1027325276780245143" },
+		{ name: "Server Support", id: "1027325788363698318" },
+		{ name: "Web Moderator", id: "1027324986312118334" },
+		{ name: "Developer", id: "867865776878125096" },
+		{ name: "Cybersecurity Specialist", id: "1034500801516810261" },
+		{ name: "Server Administrator", id: "1027325423450861568" },
+		{ name: "Server Moderator", id: "1027325055673303090" },
+		{ name: "Web Support", id: "1027325599292850196" },
 	];
 
 	// Add stuff to Database
-	if (newInfo.guild.id === "1001583335191093278") {
+	if (newInfo.guild.id === "822794927754706975") {
 		if (newInfo.user.bot || newInfo.user.system) return;
 		else {
 			const roles = [];
@@ -138,7 +112,7 @@ client.on(Events.GuildMemberUpdate, async (oldInfo, newInfo) => {
 				.map((role) => role.id)
 				.forEach((role) => {
 					const roleData = allowedRoles.filter(
-						(data) => data.mainGuild === role
+						(data) => data.id === role
 					);
 
 					if (!roleData[0]) return;
@@ -149,20 +123,17 @@ client.on(Events.GuildMemberUpdate, async (oldInfo, newInfo) => {
 				});
 
 			if (roles.length > 0) {
-				const data = await database.User.getUser(newInfo.id);
+				const data = await database.Users.getUser(newInfo.id);
 
 				if (!data) return;
 				else
-					await database.User.updateUser(
-						newInfo.id,
-						newInfo.user.username,
-						data.bio,
-						newInfo.displayAvatarURL(),
-						roles,
-						data.flags,
-						data.badges,
-						data.onboarding,
-						data.notifications
+					await database.Users.updateUser(
+						data.userID,
+						data.discordUser,
+						data.guilds,
+						data.notifications,
+						data.staff_applications,
+						roles
 					);
 			}
 		}
