@@ -38,5 +38,5 @@ module.exports = {
 			],
 		});
 	},
-    async autocomplete(client, interaction, database) {}
+	async autocomplete(client, interaction, database) {},
 };
