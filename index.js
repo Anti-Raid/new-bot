@@ -128,64 +128,6 @@ client.on(Events.GuildMemberUpdate, async (oldInfo, newInfo) => {
 		},
 	];
 
-	const staff = client.guilds.cache.find((s) => s.name === "SL Staff Center");
-
-	// Sync new roles with staff server
-	if (newInfo.guild.id === "1001583335191093278") {
-		if (newInfo.user.bot || newInfo.user.system) return;
-		else {
-			const user = await staff.members.fetch(newInfo.id);
-
-			if (user) {
-				let newRoles = [];
-				let oldRoles = [];
-
-				newInfo.roles.cache
-					.map((role) => role.id)
-					.forEach((role) => {
-						const roleData = allowedRoles.filter(
-							(data) => data.mainGuild === role
-						);
-
-						if (!roleData[0]) return;
-						else newRoles.push(roleData[0]);
-					});
-
-				oldInfo.roles.cache
-					.map((role) => role.id)
-					.forEach((role) => {
-						const roleData = allowedRoles.filter(
-							(data) => data.mainGuild === role
-						);
-
-						if (!roleData[0]) return;
-						else oldRoles.push(roleData[0]);
-					});
-
-				if (newRoles.length > 0) {
-					if (oldRoles.length > 0)
-						oldRoles.forEach((p) => {
-							const i = staff.roles.cache.get(p.staffGuild);
-							user.roles
-								.remove(i)
-								.catch((err) =>
-									logger.error("Discord (Role Sync)", err)
-								);
-						});
-
-					newRoles.forEach((p) => {
-						const i = staff.roles.cache.get(p.staffGuild);
-						user.roles
-							.add(i)
-							.catch((err) =>
-								logger.error("Discord (Role Sync)", err)
-							);
-					});
-				}
-			}
-		}
-	}
-
 	// Add stuff to Database
 	if (newInfo.guild.id === "1001583335191093278") {
 		if (newInfo.user.bot || newInfo.user.system) return;
@@ -225,41 +167,6 @@ client.on(Events.GuildMemberUpdate, async (oldInfo, newInfo) => {
 			}
 		}
 	} else return;
-});
-
-// Discord Message Create Event
-client.on(Events.MessageCreate, async (message) => {
-	let allUsers = await database.User.listAll();
-
-	allUsers.forEach(async (user) => {
-		let sessions = user.onboarding;
-
-		let session = sessions.filter(
-			(session) => session.server_id === message.guild.id
-		);
-		if (!session[0]) return;
-
-		if (sessions[0].uuid === session[0].uuid) {
-			sessions[0].messages.push({
-				user: `${message.author.username}#${message.author.discriminator}`,
-				bot: message.author.bot,
-				message: message.content,
-				time: message.createdAt,
-			});
-
-			await database.User.updateUser(
-				user.user_id,
-				user.username,
-				user.bio,
-				user.avatar,
-				user.roles,
-				user.flags,
-				user.badges,
-				sessions,
-				user.notifications
-			);
-		}
-	});
 });
 
 // Discord Interaction Event
