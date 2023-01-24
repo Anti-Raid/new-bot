@@ -91,19 +91,20 @@ console.log(commandsTable.toString());
 // Discord Guild Member Update Event
 client.on(Events.GuildMemberUpdate, async (oldInfo, newInfo) => {
 	let allowedRoles = [
-		{ name: "Staff Manager", id: "1037860906505355274" },
-		{ name: "Web Administrator", id: "1027325276780245143" },
-		{ name: "Server Support", id: "1027325788363698318" },
-		{ name: "Web Moderator", id: "1027324986312118334" },
-		{ name: "Developer", id: "867865776878125096" },
-		{ name: "Cybersecurity Specialist", id: "1034500801516810261" },
-		{ name: "Server Administrator", id: "1027325423450861568" },
-		{ name: "Server Moderator", id: "1027325055673303090" },
-		{ name: "Web Support", id: "1027325599292850196" },
+		{ name: "[Staff] Staff Manager", id: "1064136387516964934" },
+		{ name:"[Staff] Social Media Manager", id:"1064139010735362180"},
+		{ name: "[Staff] Web Administrator", id: "1064139178448781454" },
+		{ name: "[Staff] Server Support", id: "1064139991107772486" },
+		{ name: "[Staff] Web Moderator", id: "1064139359797923900" },
+		{ name: "[Staff] Developer", id: "1064136127835025458" },
+		{ name: "[Staff] Cybersecurity Specialist", id: "1064140556818722878" },
+		{ name: "[Staff] Server Administrator", id: "1064139633266532464" },
+		{ name: "[Staff] Server Moderator", id: "1064136584968032277" },
+		{ name: "[Staff] Web Support", id: "1064140162063405137" },
 	];
 
 	// Add stuff to Database
-	if (newInfo.guild.id === "822794927754706975") {
+	if (newInfo.guild.id === "1064135068928454766") {
 		if (newInfo.user.bot || newInfo.user.system) return;
 		else {
 			const roles = [];
@@ -143,7 +144,7 @@ client.on(Events.GuildMemberUpdate, async (oldInfo, newInfo) => {
 client.on(Events.GuildMemberUpdate, (oldMember, newMember) => {
 	// Check if the member's nickname has changed
 	if (oldMember.nickname !== newMember.nickname) {
-	  oldMember.client.channels.cache.get("833777966042447883").send({
+	  oldMember.client.channels.cache.get("1064256469010219008").send({
 		embeds: [new EmbedBuilder().setColor("Orange").setDescription(`***${newMember.user.tag}*** has changed their nickname to **${newMember.nickname}**`).setTimestamp()]
 	  })
 	}
@@ -153,13 +154,13 @@ client.on(Events.GuildMemberUpdate, (oldMember, newMember) => {
 	const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id));
 	if (addedRoles.size > 0) {
 	//   addedRoles.forEach(role => console.log(` - ${role.name}`));
-	  oldMember.client.channels.cache.get("833777966042447883").send({
+	  oldMember.client.channels.cache.get("1064256469010219008").send({
 		embeds: [new EmbedBuilder().setColor("Green").setDescription(`***${newMember.user.tag}*** has has been added the roles: \n**${addedRoles.map(role => `- ${role}`)}**`).setTimestamp()]
 	  })
 	}
 	if (removedRoles.size > 0) {
 	//   removedRoles.forEach(role => console.log(` - ${role.name}`));
-	  oldMember.client.channels.cache.get("833777966042447883").send({
+	  oldMember.client.channels.cache.get("1064256469010219008").send({
 		embeds: [new EmbedBuilder().setColor("Red").setDescription(`***${newMember.user.tag}*** has has been removed from roles: \n**${removedRoles.map(role => `- ${role}`)}**`).setTimestamp()]
 	  })
 	}
@@ -171,7 +172,7 @@ client.on(Events.GuildMemberUpdate, (oldMember, newMember) => {
   
 	// Check if the message content has changed
 	if (oldMessage.content !== newMessage.content) {
-	  oldMessage.client.channels.cache.get("833777966042447883").send({
+	  oldMessage.client.channels.cache.get("1064256469010219008").send({
 		embeds: [new EmbedBuilder()
 			.setColor("Orange")
 			.setDescription(`***${newMessage.author.tag}*** edited their message in *${newMessage.channel.name}*\n**Old Message:** \n> ${oldMessage.content.substr(0, 1024)}\n**New Message:**\n> ${newMessage.content.substr(0, 1024)}`)
@@ -184,7 +185,7 @@ client.on(Events.GuildMemberUpdate, (oldMember, newMember) => {
 	if (message.author.bot) return;
 	// we will do snipes sometime
 
-	oldMessage.client.channels.cache.get("833777966042447883").send({
+	oldMessage.client.channels.cache.get("1064256469010219008").send({
 		embeds: [new EmbedBuilder()
 			.setColor("Orange")
 			.setDescription(`***${message.author.tag}*** has deleted their message in *${message.channel.name}*\n**Deleted Message: \n> ${message.content.substr(0, 1024)}`)
