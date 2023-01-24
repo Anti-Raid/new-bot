@@ -88,58 +88,6 @@ console.log(commandsTable.toString());
 // console.log(buttonsTable.toString());
 // console.log(modalsTable.toString());
 
-// Discord Guild Member Update Event
-client.on(Events.GuildMemberUpdate, async (oldInfo, newInfo) => {
-	let allowedRoles = [
-		{ name: "[Staff] Staff Manager", id: "1064136387516964934" },
-		{ name:"[Staff] Social Media Manager", id:"1064139010735362180"},
-		{ name: "[Staff] Web Administrator", id: "1064139178448781454" },
-		{ name: "[Staff] Server Support", id: "1064139991107772486" },
-		{ name: "[Staff] Web Moderator", id: "1064139359797923900" },
-		{ name: "[Staff] Developer", id: "1064136127835025458" },
-		{ name: "[Staff] Cybersecurity Specialist", id: "1064140556818722878" },
-		{ name: "[Staff] Server Administrator", id: "1064139633266532464" },
-		{ name: "[Staff] Server Moderator", id: "1064136584968032277" },
-		{ name: "[Staff] Web Support", id: "1064140162063405137" },
-	];
-
-	// Add stuff to Database
-	if (newInfo.guild.id === "1064135068928454766") {
-		if (newInfo.user.bot || newInfo.user.system) return;
-		else {
-			const roles = [];
-
-			newInfo.roles.cache
-				.map((role) => role.id)
-				.forEach((role) => {
-					const roleData = allowedRoles.filter(
-						(data) => data.id === role
-					);
-
-					if (!roleData[0]) return;
-					else
-						roles.push(
-							roleData[0].name.toUpperCase().replaceAll(" ", "_")
-						);
-				});
-
-			if (roles.length > 0) {
-				const data = await database.Users.getUser(newInfo.id);
-
-				if (!data) return;
-				else
-					await database.Users.updateUser(
-						data.userID,
-						data.discordUser,
-						data.guilds,
-						data.notifications,
-						data.staff_applications,
-						roles
-					);
-			}
-		}
-	} else return;
-});
 // Guild member update event
 client.on(Events.GuildMemberUpdate, (oldMember, newMember) => {
 	// Check if the member's nickname has changed
