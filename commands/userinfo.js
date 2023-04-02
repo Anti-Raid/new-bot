@@ -16,7 +16,7 @@ module.exports = {
 	 * @param {CommandInteraction} interaction
 	 * @param {*} database
 	 */
-	async execute(client, interaction) {
+	async execute(client, interaction, database) {
 		const user = interaction.options.getUser("user", true);
 		const member = interaction.options.getMember("user", true);
 		const discord_info = await client

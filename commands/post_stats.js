@@ -8,7 +8,7 @@ module.exports = {
 	 *
 	 * @param {CommandInteraction} interaction
 	 */
-	async execute(client, interaction) {
+	async execute(client, interaction, database) {
 		const servers = interaction.client.guilds.cache.size;
 		const users = interaction.client.users.cache.size;
 

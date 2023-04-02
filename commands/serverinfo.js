@@ -8,7 +8,7 @@ module.exports = {
 	 *
 	 * @param {CommandInteraction} interaction
 	 */
-	async execute(client, interaction) {
+	async execute(client, interaction, database) {
 		interaction.reply({
 			embeds: [
 				new EmbedBuilder()

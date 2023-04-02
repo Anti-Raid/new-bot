@@ -53,7 +53,7 @@ module.exports = {
 	 * @param {CommandInteraction} interaction
 	 * @returns
 	 */
-	async execute(client, interaction) {
+	async execute(client, interaction, database) {
 		const member = interaction.options.getMember("user");
 		const user = interaction.options.getUser("user");
 		const days = interaction.options.getNumber("days") || 0;
