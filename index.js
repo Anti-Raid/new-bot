@@ -12,13 +12,19 @@ const fs = require("node:fs");
 const logger = require("./logger");
 const database = require("./database/handler");
 const ascii = require("ascii-table");
+const internal = require("node:stream");
 
 // Environment Variables
 require("dotenv").config();
 
 // Create Discord Client
 const client = new Client({
-	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessages],
+	intents: [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMembers,
+		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildMessages,
+	],
 });
 
 // Discord Client Additions
@@ -92,54 +98,112 @@ console.log(commandsTable.toString());
 client.on(Events.GuildMemberUpdate, (oldMember, newMember) => {
 	// Check if the member's nickname has changed
 	if (oldMember.nickname !== newMember.nickname) {
-	  oldMember.client.channels.cache.get("1064256469010219008").send({
-		embeds: [new EmbedBuilder().setColor("Orange").setDescription(`***${newMember.user.tag}*** has changed their nickname to **${newMember.nickname}**`).setTimestamp()]
-	  })
+		oldMember.client.channels.cache.get(database.getGuild(oldMember.guild.id).audit).send({
+			embeds: [
+				new EmbedBuilder()
+					.setColor("Orange")
+					.setDescription(
+						`***${newMember.user.tag}*** has changed their nickname to **${newMember.nickname}**`
+					)
+					.setTimestamp(),
+			],
+		});
 	}
-  
+
 	// Check if the member has been added or removed from any roles
-	const addedRoles = newMember.roles.cache.filter(role => !oldMember.roles.cache.has(role.id));
-	const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id));
+	const addedRoles = newMember.roles.cache.filter(
+		(role) => !oldMember.roles.cache.has(role.id)
+	);
+	const removedRoles = oldMember.roles.cache.filter(
+		(role) => !newMember.roles.cache.has(role.id)
+	);
 	if (addedRoles.size > 0) {
-	//   addedRoles.forEach(role => console.log(` - ${role.name}`));
-	  oldMember.client.channels.cache.get("1064256469010219008").send({
-		embeds: [new EmbedBuilder().setColor("Green").setDescription(`***${newMember.user.tag}*** has has been added the roles: \n**${addedRoles.map(role => `- ${role}`)}**`).setTimestamp()]
-	  })
+		//   addedRoles.forEach(role => console.log(` - ${role.name}`));
+		oldMember.client.channels.cache.get(database.getGuild(oldMember.guild.id).audit).send({
+			embeds: [
+				new EmbedBuilder()
+					.setColor("Green")
+					.setDescription(
+						`***${
+							newMember.user.tag
+						}*** has has been added the roles: \n**${addedRoles.map(
+							(role) => `- ${role}`
+						)}**`
+					)
+					.setTimestamp(),
+			],
+		});
 	}
 	if (removedRoles.size > 0) {
-	//   removedRoles.forEach(role => console.log(` - ${role.name}`));
-	  oldMember.client.channels.cache.get("1064256469010219008").send({
-		embeds: [new EmbedBuilder().setColor("Red").setDescription(`***${newMember.user.tag}*** has has been removed from roles: \n**${removedRoles.map(role => `- ${role}`)}**`).setTimestamp()]
-	  })
+		//   removedRoles.forEach(role => console.log(` - ${role.name}`));
+		oldMember.client.channels.cache.get(database.getGuild(oldMember.guild.id).audit).send({
+			embeds: [
+				new EmbedBuilder()
+					.setColor("Red")
+					.setDescription(
+						`***${
+							newMember.user.tag
+						}*** has has been removed from roles: \n**${removedRoles.map(
+							(role) => `- ${role}`
+						)}**`
+					)
+					.setTimestamp(),
+			],
+		});
 	}
-  });
-  // Discord Message Events
-  client.on(Events.MessageUpdate, (oldMessage, newMessage) => {
+});
+// Discord Message Events
+client.on(Events.MessageUpdate, (oldMessage, newMessage) => {
 	// Ignore messages from other bots
 	if (newMessage.author.bot) return;
-  
+
 	// Check if the message content has changed
 	if (oldMessage.content !== newMessage.content) {
-	  oldMessage.client.channels.cache.get("1064256469010219008").send({
-		embeds: [new EmbedBuilder()
-			.setColor("Orange")
-			.setDescription(`***${newMessage.author.tag}*** edited their message in *${newMessage.channel.name}*\n**Old Message:** \n> ${oldMessage.content.substr(0, 1024)}\n**New Message:**\n> ${newMessage.content.substr(0, 1024)}`)
-			.setTimestamp()]
-	  })
+		oldMessage.client.channels.cache.get(database.getGuild(oldMember.guild.id).audit).send({
+			embeds: [
+				new EmbedBuilder()
+					.setColor("Orange")
+					.setDescription(
+						`***${
+							newMessage.author.tag
+						}*** edited their message in *${
+							newMessage.channel.name
+						}*\n**Old Message:** \n> ${oldMessage.content.substr(
+							0,
+							1024
+						)}\n**New Message:**\n> ${newMessage.content.substr(
+							0,
+							1024
+						)}`
+					)
+					.setTimestamp(),
+			],
+		});
 	}
-  });
-  client.on(Events.MessageDelete, message => {
+});
+client.on(Events.MessageDelete, (message) => {
 	// Ignore messages from other bots
 	if (message.author.bot) return;
 	// we will do snipes sometime
 
-	oldMessage.client.channels.cache.get("1064256469010219008").send({
-		embeds: [new EmbedBuilder()
-			.setColor("Orange")
-			.setDescription(`***${message.author.tag}*** has deleted their message in *${message.channel.name}*\n**Deleted Message: \n> ${message.content.substr(0, 1024)}`)
-			.setTimestamp()]
-	  })
-  });
+	oldMessage.client.channels.cache.get(database.getGuild(oldMember.guild.id).audit).send({
+		embeds: [
+			new EmbedBuilder()
+				.setColor("Orange")
+				.setDescription(
+					`***${
+						message.author.tag
+					}*** has deleted their message in *${
+						message.channel.name
+					}*\n**Deleted Message: \n> ${message.content.substr(
+						0,
+						1024
+					)}`
+				)
+				.setTimestamp(),
+		],
+	});
+});
 // Discord Interaction Event
 client.on(Events.InteractionCreate, async (interaction) => {
 	// Slash Command
