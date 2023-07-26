@@ -1,6 +1,5 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { Client, CommandInteraction, EmbedBuilder } = require("discord.js");
-const ms = require("ms");
+const { Client, CommandInteraction } = require("discord.js");
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -63,38 +62,39 @@ module.exports = {
 		const totalSeconds =
 			days * 86400 + hours * 3600 + minutes * 60 + seconds;
 		const reason = interaction.options.getString("reason");
-		if (totalSeconds === 0) {
+
+		if (totalSeconds === 0)
 			member.timeout(
 				null,
 				"Timeout Removed | Removed by " + interaction.user.tag
 			);
-		}
+
 		if (member.manageable || member.moderatable) {
+			const embed = new client.EmbedBuilder()
+				.setColor("DarkRed")
+				.setAuthor({
+					name: `${interaction.user.tag} | ${interaction.guild.name} (${interaction.guild.nameAcronym})`,
+					iconURL: user.displayAvatarURL({ dynamic: true }),
+				})
+				.setDescription(
+					`${user.tag} Timed out for ${require("ms")(
+						totalSeconds * 1000,
+						{ long: true }
+					)}`
+				)
+				.setTimestamp();
+
 			member.timeout(
 				totalSeconds * 1000,
 				`${reason} | Issued by: ${interaction.user.tag}`
 			);
-			interaction.reply({
-				embeds: [
-					new EmbedBuilder()
-						.setColor("DarkRed")
-						.setAuthor({
-							name: `${interaction.user.tag} | ${interaction.guild.name} (${interaction.guild.nameAcronym})`,
-							iconURL: user.displayAvatarURL({ dynamic: true }),
-						})
-						.setDescription(
-							`${user.tag} Timed out for ${require("ms")(
-								totalSeconds * 1000,
-								{ long: true }
-							)}`
-						)
-						.setTimestamp(),
-				],
+
+			await interaction.reply({
+				embeds: [embed],
 			});
-		} else {
-			return interaction.reply({
-				content: `${user.tag} couldn't be timeouted. Check if i have the permissions to timeout him/her.`,
+		} else
+			return await interaction.reply({
+				content: `Oops! ${user.tag} could not be timed-out.\nPlease check if i have enough permissions to kick/ban/moderate and timeout members.`,
 			});
-		}
 	},
 };

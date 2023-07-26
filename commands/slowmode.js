@@ -1,11 +1,5 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const {
-	Client,
-	CommandInteraction,
-	EmbedBuilder,
-	ChannelType,
-} = require("discord.js");
-const ms = require("ms");
+const { Client, CommandInteraction, ChannelType } = require("discord.js");
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -33,14 +27,14 @@ module.exports = {
 	async execute(client, interaction, database) {
 		const channel = interaction.options.getChannel("channel");
 		const time = interaction.options.getInteger("time");
+
 		if (time <= 21600) {
 			await channel.setRateLimitPerUser(time);
 			await interaction.reply(`Slowmode set to ${time} seconds.`);
-		} else {
+		} else
 			return interaction.reply({
 				content: `> Whoops! You cannot set a higher slow mode of this channel! Maximum is 6 hours (21600 seconds).`,
 				ephemeral: true,
 			});
-		}
 	},
 };

@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { Client, CommandInteraction, EmbedBuilder } = require("discord.js");
+const { Client, CommandInteraction } = require("discord.js");
+
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName("userinfo")
@@ -29,22 +30,18 @@ module.exports = {
 						code: res.status,
 					};
 			});
-		const embed = new EmbedBuilder()
+
+		const embed = new client.EmbedBuilder()
 			.setColor(`${member.displayHexColor ?? `Aqua`}`)
 			.setAuthor({
-				name: `Userinfo For ${user.username}#${user.discriminator}`,
-				url: `${member.displayAvatarURL({ dynamic: true })}`,
+				name: `${user.tag}'s Profile`,
+				url: member.displayAvatarURL({ dynamic: true }),
 			})
-			.setThumbnail(`${member.displayAvatarURL({ dynamic: true })}`)
+			.setThumbnail(member.displayAvatarURL({ dynamic: true }))
 			.addFields(
 				{
 					name: "Username",
 					value: user.username,
-					inline: true,
-				},
-				{
-					name: "Discriminator",
-					value: `#${user.discriminator}`,
 					inline: true,
 				},
 				{
@@ -76,6 +73,7 @@ module.exports = {
 					inline: false,
 				}
 			);
+
 		if (!user.bot) {
 			embed.addFields({
 				name: "Roles In AntiRaid",
@@ -99,6 +97,7 @@ module.exports = {
 				inline: false,
 			});
 		}
-		interaction.reply({ embeds: [embed] });
+
+		await interaction.reply({ embeds: [embed] });
 	},
 };

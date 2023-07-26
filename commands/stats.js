@@ -1,11 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-unreachable */
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const {
-	MessageEmbed,
-	CommandInteraction,
-	EmbedBuilder,
-} = require("discord.js");
+const { CommandInteraction } = require("discord.js");
 const moment = require("moment");
 const ms = require("ms");
 const osu = require("node-os-utils");
@@ -15,18 +11,15 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName("stats")
 		.setDescription("Shows bot stats")
-		.addStringOption(
-			(type) =>
-				type
-					.setName("type")
-					.setDescription("Which stats to show")
-					.addChoices(
-						{ name: "General Information", value: "info" },
-						{ name: "System Information", value: "system" }
-					)
-					.setRequired(true)
-			// .addChoice("General information", "info")
-			// .addChoice("System information", "system")
+		.addStringOption((type) =>
+			type
+				.setName("type")
+				.setDescription("Which stats to show")
+				.addChoices(
+					{ name: "General Information", value: "info" },
+					{ name: "System Information", value: "system" }
+				)
+				.setRequired(true)
 		),
 	/**
 	 * @param {CommandInteraction} interaction
@@ -42,7 +35,7 @@ module.exports = {
 		cpu.usage().then(async (cpuPercentage) => {
 			mem.info().then(async (minfo) => {
 				if (type === "info" || type === "information") {
-					const embed = new EmbedBuilder()
+					const embed = new client.EmbedBuilder()
 						.setTitle(
 							"Bot stats",
 							interaction.client.user.displayAvatarURL({
@@ -62,7 +55,7 @@ module.exports = {
 							},
 							{
 								name: "Ping",
-								value: interaction.client.ws.ping + " ms",
+								value: interaction.client.ws.ping + "ms",
 								inline: true,
 							},
 							{
@@ -111,9 +104,10 @@ module.exports = {
 							interaction.client.user.displayAvatarURL()
 						)
 						.setColor("Blurple");
-					interaction.reply({ embeds: [embed] });
+
+					await interaction.reply({ embeds: [embed] });
 				} else if (type === "system") {
-					const embed = new EmbedBuilder()
+					const embed = new client.EmbedBuilder()
 						.setTitle(
 							"System Information",
 							interaction.client.user.displayAvatarURL({
@@ -133,7 +127,7 @@ module.exports = {
 							},
 							{
 								name: "Memory",
-								value: `**Used:** ${minfo.usedMemMb} MB\n**Free:** ${minfo.freeMemMb} MB\n**Total:** ${minfo.totalMemMb} MB`,
+								value: `**Used:** ${minfo.usedMemMb}MB\n**Free:** ${minfo.freeMemMb}MB\n**Total:** ${minfo.totalMemMb}MB`,
 								inline: true,
 							},
 							{
@@ -151,7 +145,8 @@ module.exports = {
 							interaction.client.user.displayAvatarURL()
 						)
 						.setColor("DARK_RED");
-					interaction.reply({ embeds: [embed] });
+
+					await interaction.reply({ embeds: [embed] });
 				}
 			});
 		});
