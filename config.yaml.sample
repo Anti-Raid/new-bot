@@ -14,3 +14,16 @@ bot_lists:
         servers: "servers"
         shards: "shards"
         users: "users"
+  - name: "Select List"
+    api_url: "https://fates-api.select-list.xyz"
+    api_token: "token here"
+    auth_format: "h#Authorization/{token}"
+    post_stats:
+      enabled: true
+      method: "POST"
+      interval: 1000
+      url_format: "u#{url}/bots/{botId}/stats"
+      data_format:
+        guild_count: "servers"
+        shard_count: "shards"
+        user_count: "members"
