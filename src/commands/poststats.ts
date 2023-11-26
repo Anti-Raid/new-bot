@@ -24,7 +24,7 @@ let command: Command = {
         let results: { [key: string]: Response } = {}
 
         for (const botList of config.bot_lists) {
-            if(!botList.post_stats.enabled) continue;
+            if(!botList?.post_stats?.enabled) continue;
 
             let res = await postStats(ctx.client, botList, botList.post_stats)
 

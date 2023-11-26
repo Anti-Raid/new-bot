@@ -1,20 +1,6 @@
 import { AntiRaid } from "../client"
+import { BotList, BotListAction } from "../config"
 import { getServerCount, getShardCount } from "./counts"
-
-export interface BotListAction {
-    enabled: boolean,
-    interval: number,
-    url_format: string // Must be u#{url}?[key1]={key2} (brackets means that anything can be substituted in)
-    data_format?: { [key: string]: string }
-}
-
-export interface BotList {
-    name: string,
-    api_url: string,
-    api_token: string,
-    auth_format: string, // Can be one of h#[header]/{token} or u#[token]={token} or b#[key]={token} (brackets means that anything can be substituted in)
-    post_stats?: BotListAction
-}
 
 export function validateAction(action: BotListAction) {
     if(!action.enabled) throw new Error("<action>.enabled is required in bot_lists in config.yaml")
@@ -40,7 +26,7 @@ function createData(botList: BotList, action: BotListAction, variables: { [key: 
     let url = parseHeader(format, {
         ...variables,
         url: botList.api_url,
-        token: botList.api_token
+        token: botList.api_token,
     })
 
     let data = {}
@@ -78,9 +64,25 @@ function createData(botList: BotList, action: BotListAction, variables: { [key: 
 
     if(action.data_format) {
         for (const key in action.data_format) {
-            let variable = variables[action.data_format[key]]
+            let value = action.data_format[key].split("|")
+            if(value.length == 0) {
+                value.push("") // Handle simple variable substitution
+            }
+
+            let variable = variables[value[0]]
             
             if(variable) {
+                switch (value[1]) {
+                    case "int":
+                        variable = parseInt(variable)
+                        break;
+                    case "float":
+                        variable = parseFloat(variable)
+                        break;
+                    case "bool":
+                        variable = variable == "true"
+                        break;
+                }
                 data[key] = variable
             }
         }
@@ -96,7 +98,8 @@ export async function postStats(client: AntiRaid, botList: BotList, action: BotL
     let variables = {
         servers: await getServerCount(client),
         shards: await getShardCount(client),
-        members: await getServerCount(client)
+        members: await getServerCount(client),
+        botId: client.user.id,
     }
 
     let { url, data } = createData(botList, action, variables)

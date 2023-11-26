@@ -360,8 +360,13 @@ export class AntiRaid extends Client {
         for (const file of commandFiles) {
             this.logger.info("Loader", `Loading command ${file.replace(".js", "")}`)
             const command: Command = (await import(`./commands/${file}`))?.default;
+
+            if(!command) {
+                throw new Error(`Invalid command ${file.replace(".js", "")}. Please ensure that you are exporting the command as default using \`export default command;\``)
+            }
+
             let neededProps = ["execute", "interactionData"]
-            
+
             for(let prop of neededProps) {
                 if(!command[prop]) {
                     throw new Error(`Command ${file} is missing property ${prop}`)
