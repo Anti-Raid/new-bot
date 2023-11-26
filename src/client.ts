@@ -1,14 +1,67 @@
-import { Client, GatewayIntentBits, ActivityType, codeBlock, EmbedBuilder, Events, CommandInteraction, Message, InteractionResponse, Routes, Team, SlashCommandBuilder, Interaction, ModalSubmitInteraction, Colors, PermissionsBitField, TeamMember } from "discord.js";
-import { AutocompleteContext, CommandContext } from "./context";
+import { Client, GatewayIntentBits, ActivityType, codeBlock, EmbedBuilder, Events, CommandInteraction, Message, InteractionResponse, Routes, Team, SlashCommandBuilder, Interaction, ModalSubmitInteraction, Colors, PermissionsBitField, TeamMember, AutocompleteInteraction } from "discord.js";
+import { AutocompleteContext, CommandContext, ContextReply } from "./context";
 import { Logger } from "./logger";
 import { readdirSync } from "node:fs";
 import { config } from "./config";
 
+export class FinalResponse {
+    private dummyResponse: boolean // If true, then there is no final response (all processing is done in the command itself)
+    private reply: ContextReply
+
+    constructor() {}
+
+    static dummy() {
+        let response = new FinalResponse()
+        response.dummyResponse = true
+        return response
+    }
+
+    static reply(reply: ContextReply) {
+        let response = new FinalResponse()
+        response.reply = reply
+        return response
+    }
+
+    /**
+     * Mark the response as a dummy response or not (if true, then there is no final response (all processing is done in the command itself))
+     * @param dummyResponse If true, then there is no final response (all processing is done in the command itself)
+     */
+    setDummyResponse(dummyResponse: boolean) {
+        this.dummyResponse = dummyResponse
+    }
+
+    /**
+     * Sets the final response
+     * @param reply The final response
+     */
+    setFinalResponse(reply: ContextReply) {
+        this.reply = reply
+    }
+
+    /**
+     * 
+     * @param ctx The context of the command
+     * @returns The final response
+     */
+    async handle(ctx: CommandContext) {
+        if(this.dummyResponse) {
+            return
+        }
+
+        return await ctx.reply(this.reply)
+    }
+}
+
+export enum BotStaffPerms {
+    Owner,
+}
+
 export interface Command {
     userPerms: PermissionsBitField[];
     botPerms: PermissionsBitField[];
+    botStaffPerms?: BotStaffPerms[];
     interactionData: SlashCommandBuilder;
-    execute: (context: CommandContext) => Promise<void>;
+    execute: (context: CommandContext) => Promise<FinalResponse>;
     autocomplete?: (context: AutocompleteContext) => Promise<void>;
 }
 
@@ -125,6 +178,82 @@ export class AntiRaid extends Client {
     }
 
     /**
+     * This function handles all the bot staff permissions
+     * @param ctx The context of the command
+     * @param perms The permissions to check
+     * @returns true if the user has the staff perms needed, else false
+     */
+    private async handleBotStaffPerms(ctx: CommandContext | AutocompleteContext, perms: BotStaffPerms[]) {
+        if(perms?.length == 0) return true
+
+        if(perms.includes(BotStaffPerms.Owner)) {
+            if(!this.botOwners.includes(ctx.interaction.user.id)) {
+                if(ctx instanceof CommandContext) {
+                    await ctx.reply({
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle("Bot Owners Only")
+                                .setDescription(
+                                    `This command can only be used by **owners** of the bot.`
+                                )
+                                .setColor(Colors.Red)
+                        ]
+                    });
+                }
+                return false;
+            }
+        }
+
+        return true
+    }
+
+    /**
+     * This function handles all the bot/user permissions
+     * @param ctx The context of the command
+     * @param command The command to check
+     * @returns true if the user has the staff perms needed, else false
+     */
+    private async handlePermissions(ctx: CommandContext | AutocompleteContext, command: Command) {
+        if(command.userPerms.length > 0) {
+            if(!ctx.interaction.memberPermissions.has(command.userPerms)) {
+                if(ctx instanceof CommandContext) {
+                    await ctx.reply({
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle("Insufficient Permissions")
+                                .setDescription(
+                                    `You do not have the required permissions to run this command. You need the following permissions: \`${command.userPerms.join(", ")}\``
+                                )
+                                .setColor(Colors.Red)
+                        ]
+                    });
+                }
+                return false;
+            }
+        }
+
+        if(command.botPerms.length > 0) {
+            if(!ctx.interaction.appPermissions.has(command.botPerms)) {
+                if(ctx instanceof CommandContext) {
+                    await ctx.reply({
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle("Insufficient Permissions")
+                                .setDescription(
+                                    `I do not have the required permissions to run this command. I need the following permissions: \`${command.botPerms.join(", ")}\``
+                                )
+                                .setColor(Colors.Red)
+                        ]
+                    });
+                }
+                return false;
+            }
+        }
+
+        return true
+    }
+
+    /**
      * This is the core event listener for interactions
      */
     private async onInteraction(interaction: Interaction) {
@@ -147,41 +276,24 @@ export class AntiRaid extends Client {
                 return;
             }
 
-            if(command.userPerms.length > 0) {
-                if(!interaction.memberPermissions.has(command.userPerms)) {
-                    await interaction.reply({
-                        embeds: [
-                            new EmbedBuilder()
-                                .setTitle("Insufficient Permissions")
-                                .setDescription(
-                                    `You do not have the required permissions to run this command. You need the following permissions: \`${command.userPerms.join(", ")}\``
-                                )
-                                .setColor(Colors.Red)
-                        ]
-                    });
-                    return;
-                }
+            let ctx = new CommandContext(this, interaction)
+
+            if(!this.handleBotStaffPerms(ctx, command.botStaffPerms)) {
+                return
             }
 
-            if(command.botPerms.length > 0) {
-                if(!interaction.appPermissions.has(command.botPerms)) {
-                    await interaction.reply({
-                        embeds: [
-                            new EmbedBuilder()
-                                .setTitle("Insufficient Permissions")
-                                .setDescription(
-                                    `I do not have the required permissions to run this command. I need the following permissions: \`${command.botPerms.join(", ")}\``
-                                )
-                                .setColor(Colors.Red)
-                        ]
-                    });
-                    return;
-                }
+            if(!this.handlePermissions(ctx, command)) {
+                return
             }
     
             try {
-                let ctx = new CommandContext(this, interaction)
-                return await command.execute(ctx);
+                let fr = await command.execute(ctx);
+
+                if(fr) {
+                    await fr.handle(ctx)
+                }
+
+                return
             } catch (error) {
                 this.logger.error(`Command (${interaction.commandName})`, error);
     
@@ -211,8 +323,17 @@ export class AntiRaid extends Client {
                 );
             }
     
+            let ctx = new AutocompleteContext(this, interaction)
+
+            if(!this.handleBotStaffPerms(ctx, command.botStaffPerms)) {
+                return
+            }
+
+            if(!this.handlePermissions(ctx, command)) {
+                return
+            }
+
             try {
-                let ctx = new AutocompleteContext(this, interaction)
                 return await command.autocomplete(ctx);
             } catch (error) {
                 return this.logger.error(

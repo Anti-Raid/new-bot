@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import { Command } from "../client";
+import { Command, FinalResponse } from "../client";
 import { SlashCommandBuilder } from "@discordjs/builders";
 
 let command: Command = {
@@ -40,6 +40,8 @@ let command: Command = {
 				),
 			],
         });
+
+        return FinalResponse.dummy()
     }
 }
 
