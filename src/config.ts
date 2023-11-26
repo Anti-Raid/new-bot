@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 
 export interface BotListAction {
     enabled: boolean,
+    method: string,
     interval: number,
     url_format: string // Must be u#{url}?[key1]={key2} (brackets means that anything can be substituted in)
     data_format?: { [key: string]: string }

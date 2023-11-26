@@ -7,10 +7,14 @@ import { Logger } from "./logger";
 
 let logger = new Logger()
 
-const manager = new ShardingManager("./build/setup.js", { token: config.token });
+const manager = new ShardingManager("./build/setup.js", { 
+    token: config.token,
+});
 
 manager.on("shardCreate", (shard) => {
     logger.info("ShardManager", `Launched shard ${shard.id} [${shard.id + 1}/${manager.totalShards}]`)
 });
 
-manager.spawn();
+manager.spawn({
+    delay: 5000,
+});

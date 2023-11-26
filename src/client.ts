@@ -297,8 +297,17 @@ export class AntiRaid extends Client {
             } catch (error) {
                 this.logger.error(`Command (${interaction.commandName})`, error);
     
-                await interaction.reply(
-                    `An error has occured.\n\n${codeBlock("js", error)}`
+                await ctx.reply(
+                   {
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle("An Error Occurred")
+                                .setDescription(
+                                    `An error occurred while executing the command \`${interaction.commandName}\``
+                                )
+                                .setColor(Colors.Red)
+                        ]
+                   }
                 );
                 return;
             }

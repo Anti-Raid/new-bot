@@ -47,6 +47,8 @@ let command: Command = {
                     }
                 )
             } else {
+                let text = await res.text()
+                ctx.client.logger.error("Error posting stats", { key, res, text })
                 embed.addFields(
                     {
                         name: key,
@@ -62,3 +64,5 @@ let command: Command = {
         })
     }
 }
+
+export default command;

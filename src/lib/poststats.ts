@@ -4,6 +4,7 @@ import { getServerCount, getShardCount } from "./counts"
 
 export function validateAction(action: BotListAction) {
     if(!action.enabled) throw new Error("<action>.enabled is required in bot_lists in config.yaml")
+    if(!action.method) throw new Error("<action>.method is required in bot_lists in config.yaml")
     if(!action.interval) throw new Error("<action>.interval is required in bot_lists in config.yaml")
     if(!action.url_format) throw new Error("<action>.url_format is required in bot_lists in config.yaml")
 }
@@ -16,23 +17,25 @@ function parseHeader(header: string, variables: { [key: string]: any }) {
     return parsed;
 }
 
-function createData(botList: BotList, action: BotListAction, variables: { [key: string]: any }) {
+function createData(botList: BotList, action: BotListAction, initialVariables: { [key: string]: any }) {
     let [mod, format, ...ext] = action.url_format.split("#");
 
     if(mod != "u") {
         throw new Error("Only u# is supported for url_format in bot_lists in config.yaml")
     }
 
-    let url = parseHeader(format, {
-        ...variables,
+    let variables = {
+        ...initialVariables,
         url: botList.api_url,
         token: botList.api_token,
-    })
+    }
+
+    let url = parseHeader(format, variables)
 
     let data = {}
     let headers = {}
 
-    let [authMod, authFormat, ...authExt] = botList.auth_format.split("#");
+    let [authMod, authFormat] = botList.auth_format.split("#");
 
     if(authMod != "u" && authMod != "h" && authMod != "b") {
         throw new Error("Only u#, h#, and b# are supported for auth_format in bot_lists in config.yaml")
@@ -48,16 +51,17 @@ function createData(botList: BotList, action: BotListAction, variables: { [key: 
             break;
         case "h":
             let [headerName, ...headerExt] = authFormat.split("/");
+            console.log(headerName, headerExt)
             headers = {
                 ...headers,
-                [headerName]: headerExt.join(",")
+                [headerName]: parseHeader(headerExt.join(""), variables)
             }
             break;
         case "b":
             let [bodyName, ...bodyExt] = authFormat.split("=");
             data = {
                 ...data,
-                [bodyName]: parseHeader(bodyExt.join("="), variables)
+                [bodyName]: parseHeader(bodyExt.join(""), variables)
             }
             break;
     }
@@ -90,7 +94,8 @@ function createData(botList: BotList, action: BotListAction, variables: { [key: 
 
     return {
         url,
-        data
+        data,
+        headers
     }
 }
 
@@ -102,14 +107,14 @@ export async function postStats(client: AntiRaid, botList: BotList, action: BotL
         botId: client.user.id,
     }
 
-    let { url, data } = createData(botList, action, variables)
+    let { url, data, headers } = createData(botList, action, variables)
 
-    client.logger.info("Posting stats", { url, data })
+    client.logger.info("Posting stats", { url, data, headers })
 
     let res = await fetch(url, {
-        headers: {
-            "Authorization": parseHeader(botList.auth_format, { token: botList.api_token })
-        }
+        method: action.method,
+        headers: headers,
+        body: Object.keys(data).length > 0 ? JSON.stringify(data) : undefined
     })
 
     return res

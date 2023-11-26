@@ -1,2 +1,16 @@
 client_id:
 token:
+bot_lists:
+  - name: "Infinity Bot List"
+    api_url: "https://spider.infinitybots.gg"
+    api_token: "token here"
+    auth_format: "h#Authorization/{token}"
+    post_stats:
+      enabled: true
+      method: "POST"
+      interval: 1000
+      url_format: "u#{url}/bots/stats"
+      data_format:
+        servers: "servers"
+        shards: "shards"
+        users: "users"
