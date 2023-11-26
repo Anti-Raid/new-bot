@@ -113,7 +113,10 @@ export async function postStats(client: AntiRaid, botList: BotList, action: BotL
 
     let res = await fetch(url, {
         method: action.method,
-        headers: headers,
+        headers: {
+            ...headers,
+            "Content-Type": "application/json"
+        },
         body: Object.keys(data).length > 0 ? JSON.stringify(data) : undefined
     })
 
