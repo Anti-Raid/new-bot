@@ -60,7 +60,7 @@ export interface Command {
     userPerms: PermissionsBitField[];
     botPerms: PermissionsBitField[];
     botStaffPerms?: BotStaffPerms[];
-    interactionData: SlashCommandBuilder;
+    interactionData: SlashCommandBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
     onLoad?: () => Promise<void>;
     execute: (context: CommandContext) => Promise<FinalResponse>;
     autocomplete?: (context: AutocompleteContext) => Promise<void>;
