@@ -1,7 +1,7 @@
 import { Colors, EmbedBuilder, SlashCommandBuilder } from "discord.js";
 import { BotStaffPerms, Command, FinalResponse } from "../core/client";
 import { readFileSync } from "fs";
-import { cpus, totalmem, freemem } from "os"
+import { cpus, totalmem, freemem, release } from "os"
 import { version as djsVersion } from "discord.js"
 import { ContextReplyStatus } from "../core/context";
 
@@ -146,7 +146,7 @@ let command: Command = {
 				let cpuPercentage = getCpuUsage()
 
 				let platform = process.platform;
-				let osRelease = "<unknown>";
+				let osRelease = release();
 
 				if(platform == "linux") {
 					// Read /etc/os-release
