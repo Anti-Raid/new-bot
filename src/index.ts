@@ -2,8 +2,8 @@
  * Sharding implementation for the bot
  */
 import { ShardingManager } from "discord.js"
-import { config } from "./config";
-import { Logger } from "./logger";
+import { config } from "./core/config";
+import { Logger } from "./core/logger";
 
 let logger = new Logger()
 

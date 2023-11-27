@@ -1,7 +1,7 @@
 import { parse } from 'yaml'
 import { readFileSync } from "node:fs"
 import { Logger } from './logger'
-import { validateAction } from './lib/poststats'
+import { validateAction } from './common/poststats'
 
 export interface BotListAction {
     enabled: boolean,
@@ -21,6 +21,7 @@ export interface BotList {
 
 interface Config {
     client_id: string,
+    main_server: string,
     token: string,
     bot_lists: BotList[]
 }
@@ -32,6 +33,7 @@ const loadConfig = (): Config => {
     let parsed = parse(readFileSync("./config.yaml").toString('utf-8'))
 
     if(!parsed.client_id) throw new Error("client_id is required in config.yaml")
+    if(!parsed.main_server) throw new Error("main_server is required in config.yaml")
     if(!parsed.token) throw new Error("token is required in config.yaml")
     if(!parsed.bot_lists) throw new Error("bot_lists is required in config.yaml")
 
@@ -50,6 +52,7 @@ const loadConfig = (): Config => {
 
     return {
         client_id: parsed.client_id,
+        main_server: parsed.main_server,
         token: parsed.token,
         bot_lists: parsed.bot_lists
     }

@@ -1,5 +1,5 @@
 import { EmbedBuilder } from "discord.js";
-import { Command, FinalResponse } from "../client";
+import { Command, FinalResponse } from "../core/client";
 import { SlashCommandBuilder } from "@discordjs/builders";
 
 let command: Command = {

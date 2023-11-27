@@ -1,4 +1,5 @@
-client_id:
+client_id: "849331145862283275"
+main_server: "1064135068928454766"
 token:
 bot_lists:
   - name: "Infinity Bot List"

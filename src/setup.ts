@@ -1,6 +1,6 @@
 // Packages
-import { AntiRaid } from "./client";
-import sql from "./db";
+import { AntiRaid } from "./core/client";
+import sql from "./core/db";
 
 
 // Create Discord Client

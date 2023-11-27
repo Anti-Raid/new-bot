@@ -1,7 +1,7 @@
 import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
-import { BotStaffPerms, Command, FinalResponse } from "../client";
-import { postStats } from "../lib/poststats";
-import { config } from "../config";
+import { BotStaffPerms, Command, FinalResponse } from "../core/client";
+import { postStats } from "../core/common/poststats";
+import { config } from "../core/config";
 
 let command: Command = {
     userPerms: [],

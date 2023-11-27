@@ -187,7 +187,7 @@ export class AntiRaid extends Client {
     private async handleBotStaffPerms(ctx: CommandContext | AutocompleteContext, perms: BotStaffPerms[]) {
         if(perms?.length == 0) return true
 
-        if(perms.includes(BotStaffPerms.Owner)) {
+        if(perms?.includes(BotStaffPerms.Owner)) {
             if(!this.botOwners.includes(ctx.interaction.user.id)) {
                 if(ctx instanceof CommandContext) {
                     await ctx.reply({
@@ -263,17 +263,21 @@ export class AntiRaid extends Client {
             const command = this.commands.get(interaction.commandName);
     
             if (!command) {
-                await interaction.reply({
-                    embeds: [
-                        new EmbedBuilder()
-                            .setTitle("Command Unavailable")
-                            .setDescription(
-                                `The command \`${interaction.commandName}\` is not available at this time`
-                            )
-                            .setColor(Colors.Red)
-                            .toJSON(),
-                    ]
-                });
+                try {
+                    await interaction.reply({
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle("Command Unavailable")
+                                .setDescription(
+                                    `The command \`${interaction.commandName}\` is not available at this time`
+                                )
+                                .setColor(Colors.Red)
+                                .toJSON(),
+                        ]
+                    });
+                } catch (error) {
+                    this.logger.error(`Command (${interaction.commandName})`, "Error when handling error:", error);
+                }
                 return;
             }
 
@@ -297,19 +301,23 @@ export class AntiRaid extends Client {
                 return
             } catch (error) {
                 this.logger.error(`Command (${interaction.commandName})`, error);
-    
-                await ctx.reply(
-                   {
-                        embeds: [
-                            new EmbedBuilder()
-                                .setTitle("An Error Occurred")
-                                .setDescription(
-                                    `An error occurred while executing the command \`${interaction.commandName}\``
-                                )
-                                .setColor(Colors.Red)
-                        ]
-                   }
-                );
+                
+                try {
+                    await ctx.reply(
+                    {
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setTitle("An Error Occurred")
+                                    .setDescription(
+                                        `An error occurred while executing the command \`${interaction.commandName}\``
+                                    )
+                                    .setColor(Colors.Red)
+                            ]
+                    }
+                    );
+                } catch (error) {
+                    this.logger.error(`Command (${interaction.commandName})`, "Error when handling error:", error);
+                }
                 return;
             }
         }
@@ -369,7 +377,7 @@ export class AntiRaid extends Client {
         
         for (const file of commandFiles) {
             this.logger.info("Loader", `Loading command ${file.replace(".js", "")}`)
-            const command: Command = (await import(`./commands/${file}`))?.default;
+            const command: Command = (await import(`../commands/${file}`))?.default;
 
             if(!command) {
                 throw new Error(`Invalid command ${file.replace(".js", "")}. Please ensure that you are exporting the command as default using \`export default command;\``)
@@ -381,6 +389,10 @@ export class AntiRaid extends Client {
                 if(!command[prop]) {
                     throw new Error(`Command ${file} is missing property ${prop}`)
                 }
+            }
+
+            if(command.interactionData.name != file.replace(".js", "")) {
+                throw new Error(`Command ${file} has an invalid name. Please ensure that the name of the command is the same as the file name`)
             }
 
             this.commands.set(command.interactionData.name, command);
