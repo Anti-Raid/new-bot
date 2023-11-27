@@ -61,6 +61,7 @@ export interface Command {
     botPerms: PermissionsBitField[];
     botStaffPerms?: BotStaffPerms[];
     interactionData: SlashCommandBuilder;
+    onLoad?: () => Promise<void>;
     execute: (context: CommandContext) => Promise<FinalResponse>;
     autocomplete?: (context: AutocompleteContext) => Promise<void>;
 }
@@ -383,6 +384,10 @@ export class AntiRaid extends Client {
             }
 
             this.commands.set(command.interactionData.name, command);
+
+            if(command.onLoad) {
+                await command.onLoad()
+            }
         }
     }
 
