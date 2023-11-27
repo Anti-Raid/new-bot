@@ -1,5 +1,7 @@
 import { parse } from 'yaml'
 import { readFileSync } from "node:fs"
+import { Logger } from './logger'
+import { validateAction } from './lib/poststats'
 
 export interface BotListAction {
     enabled: boolean,
@@ -24,6 +26,9 @@ interface Config {
 }
 
 const loadConfig = (): Config => {
+    let tempLogger = new Logger()
+    tempLogger.info("Config", "Loading config.yaml")
+
     let parsed = parse(readFileSync("./config.yaml").toString('utf-8'))
 
     if(!parsed.client_id) throw new Error("client_id is required in config.yaml")
@@ -37,12 +42,11 @@ const loadConfig = (): Config => {
         if(!botList.auth_format) throw new Error("auth_format is required in bot_lists in config.yaml")
 
         if(botList.post_stats) {
-            if(!botList.post_stats.enabled) throw new Error("post_stats.enabled is required in bot_lists in config.yaml as post_stats is defined")
-            if(!botList.post_stats.interval) throw new Error("post_stats.interval is required in bot_lists in config.yaml as post_stats is defined")
-            if(!botList.post_stats.url_format) throw new Error("post_stats.url_format is required in bot_lists in config.yaml as post_stats is defined")
-            if(!botList.post_stats.data_format) throw new Error("post_stats.data_format is required in bot_lists in config.yaml as post_stats is defined")
+            validateAction(botList.post_stats)
         }
     }
+
+    tempLogger.info("Config", "Loaded config.yaml")
 
     return {
         client_id: parsed.client_id,

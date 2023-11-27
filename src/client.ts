@@ -403,6 +403,8 @@ export class AntiRaid extends Client {
         // Discord Error Event
         this.on(Events.Error, (error) => this.logger.error("Discord", error));
 
+        this.on(Events.ShardError, (error, id) => this.logger.error("Discord", `Shard ${id} error`, error));
+
         this.on(Events.InteractionCreate, this.onInteraction);        
 
         this.hasLoadedListeners = true

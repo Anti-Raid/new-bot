@@ -6,6 +6,7 @@
 	"scripts": {
 		"build": "tsc -p tsconfig.json",
 		"start": "node build/index.js",
+		"dev": "node build/index.js",
 		"deploy": "node deploy.js",
 		"format": "prettier --write --plugin-search-dir=. ."
 	},
