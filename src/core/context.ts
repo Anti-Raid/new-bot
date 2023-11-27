@@ -34,7 +34,7 @@ export enum ContextReplyStatus {
 export class CommandContext {
     client: AntiRaid;
     interaction: ChatInputCommandInteraction
-    private replyState: ContextReplyStatus = ContextReplyStatus.Pending;
+    private _replyState: ContextReplyStatus = ContextReplyStatus.Pending;
 
     constructor(client: AntiRaid, interaction: ChatInputCommandInteraction) {
         this.client = client;
@@ -42,11 +42,11 @@ export class CommandContext {
     }
 
     get replyStatus() {
-        return this.replyState;
+        return this._replyState;
     }
 
     public async reply(data: ContextReply): Promise<Message<boolean> | InteractionResponse<boolean>> {
-        if(this.replyState != ContextReplyStatus.Pending) {
+        if(this._replyState != ContextReplyStatus.Pending) {
             return await this.interaction.followUp(data)
         }
         let res = await this.interaction.reply({
@@ -56,7 +56,7 @@ export class CommandContext {
             fetchReply: data.fetchReply
         })
 
-        this.replyState = ContextReplyStatus.Replied;
+        this._replyState = ContextReplyStatus.Replied;
 
         return res
     }
@@ -73,7 +73,7 @@ export class CommandContext {
     }
 
     public async followUp(data: ContextReply) {
-        if(this.replyState == ContextReplyStatus.Pending) {
+        if(this._replyState == ContextReplyStatus.Pending) {
             throw new Error("Cannot follow up before replying")
         }
         await this.interaction.followUp({
@@ -89,7 +89,7 @@ export class CommandContext {
      * @param options The options to defer the reply with
      */
     public async defer(options?: InteractionDeferReplyOptions) {
-        if(this.replyState != ContextReplyStatus.Pending) {
+        if(this._replyState != ContextReplyStatus.Pending) {
             throw new Error("Cannot defer to an interaction that has already been responded to")
         }
         await this.interaction.deferReply(options);
