@@ -93,6 +93,14 @@ let command: Command = {
         const reason = ctx.interaction.options.getString("reason");
         const deleteMessagesTill = parseDuration(ctx.interaction.options.getString("delete_messages_till") || "7d")
 
+        // Ensure deleteMessagesTill is less than 2 weeks
+        if(deleteMessagesTill > 1209600) {
+            return FinalResponse.reply({
+                content: "You cannot delete messages older than 2 weeks!",
+                ephemeral: true,
+            });
+        }
+
         let disallowDM = false;
         await sql.begin(async sql => {
             let auditLogEntry = await addAuditLogEvent(sql, {
@@ -131,32 +139,34 @@ let command: Command = {
                     let channels = await ctx.interaction.guild.channels.fetch()
 
                     for (const [id, channel] of channels) {
+                        if(!channel.isTextBased()) {
+                            continue
+                        }
+
                         let isNotDone = false
                         let tries = 0
                         let currentMessage = undefined    
 
                         while (!isNotDone && tries < 5) {
-                            if(channel.isTextBased()) {
-                                let messages = await channel.messages.fetch({ 
-                                    limit: 100,
-                                    ...(currentMessage ? { before: currentMessage.id } : {})
-                                })
+                            let messages = await channel.messages.fetch({ 
+                                limit: 100,
+                                ...(currentMessage ? { before: currentMessage.id } : {})
+                            })
 
-                                if(messages.size < 100) {
-                                    isNotDone = true
-                                }
-
-                                let messagesToDelete = messages.filter(message => message.author.id == guildMember.id && message.createdTimestamp > Date.now() - deleteMessagesTill * 1000)
-                                
-                                try {
-                                    await channel.bulkDelete(messagesToDelete)
-                                } catch (err) {
-                                    ctx.client.logger.error(`Failed to delete messages in channel ${channel.id} in guild ${ctx.interaction.guild.id}. Error: ${err.message}`)
-                                }
-
-                                // Now set currentMessage to the message with the oldest timestamp
-                                currentMessage = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp).first()
+                            if(messages.size < 100) {
+                                isNotDone = true
                             }
+
+                            let messagesToDelete = messages.filter(message => message.author.id == guildMember.id && message.createdTimestamp > Date.now() - deleteMessagesTill * 1000)
+                            
+                            try {
+                                await channel.bulkDelete(messagesToDelete)
+                            } catch (err) {
+                                ctx.client.logger.error(`Failed to delete messages in channel ${channel.id} in guild ${ctx.interaction.guild.id}. Error: ${err.message}`)
+                            }
+
+                            // Now set currentMessage to the message with the oldest timestamp
+                            currentMessage = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp).first()
                         }
                     }    
                 }
