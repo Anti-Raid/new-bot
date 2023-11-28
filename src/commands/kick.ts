@@ -54,11 +54,11 @@ const parseDuration = (duration: string | undefined): number => {
 }
 
 let command: Command = {
-    userPerms: [PermissionsBitField.Flags.BanMembers],
-    botPerms: [PermissionsBitField.Flags.BanMembers],
+    userPerms: [PermissionsBitField.Flags.KickMembers],
+    botPerms: [PermissionsBitField.Flags.KickMembers],
     interactionData: new SlashCommandBuilder()
-	.setName("ban")
-	.setDescription("Bans a user from the server.")
+	.setName("kick")
+	.setDescription("Kicks a user from the server.")
 	.addUserOption((option) => option
 		.setName("user")
 		.setDescription("Who is the target user?")
@@ -70,12 +70,8 @@ let command: Command = {
         .setMaxLength(512)
 	)
     .addStringOption((option) => option
-        .setName("duration")
-        .setDescription("How long should this ban last? Use '0' or leave blank for permanent. Defaults to permanent.")
-    )
-    .addStringOption((option) => option
         .setName("delete_messages_till")
-        .setDescription("Delete messages until this many units prior. Defaults to 7d")
+        .setDescription("Delete messages until this many units prior. Defaults to 7d. Limited to 500 messages per channel.")
     ),
     execute: async (ctx) => {
         // @ts-expect-error
@@ -89,26 +85,24 @@ let command: Command = {
         // Ensure that the member can ban the target member
         if (guildMember.roles.highest.comparePositionTo((ctx.interaction.member.roles as GuildMemberRoleManager).highest) > 0) {
             return FinalResponse.reply({
-                content: "You cannot ban this user as they have a higher role than you.",
+                content: "You cannot kick this user as they have a higher role than you.",
                 ephemeral: true,
             });
         }
         
         const reason = ctx.interaction.options.getString("reason");
-        const duration = parseDuration(ctx.interaction.options.getString("duration"))
         const deleteMessagesTill = parseDuration(ctx.interaction.options.getString("delete_messages_till") || "7d")
 
         let disallowDM = false;
         await sql.begin(async sql => {
             let auditLogEntry = await addAuditLogEvent(sql, {
-                type: "ban",
+                type: "kick",
                 userId: ctx.interaction.user.id,
                 guildId: ctx.interaction.guild.id,
                 data: {
                     "status": "pending",
                     "target_id": guildMember.id,
-                    "via": "cmd:ban",
-                    "duration": duration,
+                    "via": "cmd:kick",
                     "delete_messages_till": deleteMessagesTill,
                     "reason": reason
                 }
@@ -117,7 +111,7 @@ let command: Command = {
             try {
                 const embed = new EmbedBuilder()
                     .setColor("Red")
-                    .setTitle(`Banned from ${ctx.interaction.guild.name}`)
+                    .setTitle(`Kicked from ${ctx.interaction.guild.name}`)
                     .setDescription(reason ?? "No reason specified.")
                     .setAuthor({
                         name: ctx.client.user.displayName,
@@ -131,59 +125,73 @@ let command: Command = {
             }     
             
             try {
-                await guildMember?.ban({ 
-                    reason: `${ctx.interaction.user.username} [${ctx.interaction.user.id}]: ${reason ?? "No reason specified."}`,
-                    deleteMessageSeconds: deleteMessagesTill,
-                });    
+                await guildMember?.kick(`${ctx.interaction.user.username} [${ctx.interaction.user.id}]: ${reason ?? "No reason specified."}`);    
+            
+                if(deleteMessagesTill > 0) {
+                    let channels = await ctx.interaction.guild.channels.fetch()
+
+                    for (const [id, channel] of channels) {
+                        let isNotDone = false
+                        let tries = 0
+                        let currentMessage = undefined    
+
+                        while (!isNotDone && tries < 5) {
+                            if(channel.isTextBased()) {
+                                let messages = await channel.messages.fetch({ 
+                                    limit: 100,
+                                    ...(currentMessage ? { before: currentMessage.id } : {})
+                                })
+
+                                if(messages.size < 100) {
+                                    isNotDone = true
+                                }
+
+                                let messagesToDelete = messages.filter(message => message.author.id == guildMember.id && message.createdTimestamp > Date.now() - deleteMessagesTill * 1000)
+                                
+                                try {
+                                    await channel.bulkDelete(messagesToDelete)
+                                } catch (err) {
+                                    ctx.client.logger.error(`Failed to delete messages in channel ${channel.id} in guild ${ctx.interaction.guild.id}. Error: ${err.message}`)
+                                }
+
+                                // Now set currentMessage to the message with the oldest timestamp
+                                currentMessage = messages.sort((a, b) => a.createdTimestamp - b.createdTimestamp).first()
+                            }
+                        }
+                    }    
+                }
             } catch (err) {
                 await editAuditLogEvent(sql, auditLogEntry, {
-                    type: "ban",
+                    type: "kick",
                     userId: ctx.interaction.user.id,
                     guildId: ctx.interaction.guild.id,
                     data: {
                         "status": "failed",
                         "error": err.message,
                         "target_id": guildMember.id,
-                        "via": "cmd:ban",
-                        "duration": duration,
+                        "via": "cmd:kick",
                         "delete_messages_till": deleteMessagesTill,
                         "reason": reason
                     }
                 })    
                 return FinalResponse.reply({
-                    content: `Failed to ban **${guildMember.user.tag}**. Error: \`${err.message}\``,
+                    content: `Failed to kick **${guildMember.user.tag}**. Error: \`${err.message}\``,
                     ephemeral: true,
                 });
             }
 
             await editAuditLogEvent(sql, auditLogEntry, {
-                type: "ban",
+                type: "kick",
                 userId: ctx.interaction.user.id,
                 guildId: ctx.interaction.guild.id,
                 data: {
                     "status": "success",
                     "target_id": guildMember.id,
-                    "via": "cmd:ban",
-                    "duration": duration,
+                    "via": "cmd:kick",
                     "delete_messages_till": deleteMessagesTill,
                     "reason": reason
                 }
             })
-    
-            if(duration > 0) {
-                await addGuildAction(sql, {
-                    type: "unban",
-                    userId: guildMember.id,
-                    guildId: ctx.interaction.guild.id,
-                    auditLogEntry,
-                    expiry: `${duration} seconds`,
-                    data: {
-                        "via": "cmd:ban",
-                        "duration": duration,
-                        "reason": reason
-                    }
-                })   
-            }    
         })
 
         return FinalResponse.reply(
@@ -192,7 +200,7 @@ let command: Command = {
                     new EmbedBuilder()
                         .setColor("Green")
                         .setDescription(
-                            `Banned **${guildMember.user.tag}**${
+                            `Kicked **${guildMember.user.tag}**${
                                 disallowDM ? " (DMs disabled)" : ""
                             }`
                         )

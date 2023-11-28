@@ -3,7 +3,7 @@ import { AutocompleteContext, CommandContext, ContextReply } from "./context";
 import { Logger } from "./logger";
 import { readdirSync } from "node:fs";
 import { config } from "./config";
-import { Permission, createGuildIfNotExists, getUserPermissions } from "./common/guilds/guildBase";
+import { createGuildIfNotExists } from "./common/guilds/guildBase";
 
 export class FinalResponse {
     private dummyResponse: boolean // If true, then there is no final response (all processing is done in the command itself)
@@ -58,7 +58,7 @@ export enum BotStaffPerms {
 }
 
 export interface Command {
-    userPerms: Permission[];
+    userPerms: (PermissionsBitField | bigint)[];
     botPerms: (PermissionsBitField | bigint)[];
     botStaffPerms?: BotStaffPerms[];
     interactionData: SlashCommandBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
@@ -216,6 +216,11 @@ export class AntiRaid extends Client {
      * @returns true if the user has the staff perms needed, else false
      */
     private async handlePermissions(ctx: CommandContext | AutocompleteContext, command: Command) {
+        if(ctx.interaction.guild) {
+            // Always ensure the guild is created on command use
+            await createGuildIfNotExists(ctx.interaction.guild)
+        }
+
         if(command.userPerms.length > 0) {
             if(!ctx.interaction.guild) {
                 if(ctx instanceof CommandContext) {
@@ -233,9 +238,7 @@ export class AntiRaid extends Client {
                 return false;
             }
 
-            await createGuildIfNotExists(ctx.interaction.guild)
-            let userPermsInDb = await getUserPermissions(ctx.interaction.guild.id, ctx.interaction.user.id)
-            if(!userPermsInDb.hasAll(command.userPerms)) {
+            if(!ctx.interaction.memberPermissions.has(command.userPerms)) {
                 if(ctx instanceof CommandContext) {
                     try {
                         await ctx.reply({

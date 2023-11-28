@@ -1,4 +1,4 @@
-import sql from "../../db"
+import postgres from "postgres"
 
 /**
 create table audit_logs (
@@ -52,12 +52,25 @@ export interface CreateAuditLogEvent {
  * @param event The event to add
  * @returns The ID of the added event
  */
-export const addAuditLogEvent = async (event: CreateAuditLogEvent): Promise<string> => {
+export const addAuditLogEvent = async (sql: postgres.Sql<{}> | postgres.TransactionSql<{}>, event: CreateAuditLogEvent): Promise<string> => {
     let id =  await sql`
         INSERT INTO audit_logs ${sql(event, 'type', 'userId', 'guildId', 'data')} RETURNING id
     `
     return id[0].id
 }
+
+/**
+ * Edits an audit log event
+ * 
+ * @param id The ID of the event to edit
+ * @param event The event to edit
+ */
+export const editAuditLogEvent = async (sql: postgres.Sql<{}> | postgres.TransactionSql<{}>, id: string, event: CreateAuditLogEvent) => {
+    await sql`
+        UPDATE audit_logs SET ${sql(event, 'type', 'userId', 'guildId', 'data')} WHERE id = ${id}
+    `
+}
+
 
 /**
  * Data to create a guild action
@@ -95,7 +108,7 @@ export interface CreateGuildAction {
  * @param action The action to add
  * @returns The ID of the added action
  */
-export const addGuildAction = async (action: CreateGuildAction): Promise<string> => {
+export const addGuildAction = async (sql: postgres.Sql<{}> | postgres.TransactionSql<{}>, action: CreateGuildAction): Promise<string> => {
     let fAction = {
         ...action,
         expiry: `INTERVAL '${action.expiry}'`
