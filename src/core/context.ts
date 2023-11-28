@@ -20,15 +20,15 @@ export enum ContextReplyStatus {
     /**
      * The reply has not been sent yet
      */
-    Pending,
+    Pending = "pending",
     /**
      * The reply has been sent
      */
-    Replied,
+    Replied = "replied",
     /**
      * The reply has been deferred
      */
-    Deferred,
+    Deferred = "deferred",
 }
 
 export class CommandContext {
@@ -46,9 +46,16 @@ export class CommandContext {
     }
 
     public async reply(data: ContextReply): Promise<Message<boolean> | InteractionResponse<boolean>> {
+        this.client.logger.error("Context", "ReplyState", this._replyState, "Data", JSON.stringify(data))
+        
         if(this._replyState != ContextReplyStatus.Pending) {
             return await this.interaction.followUp(data)
         }
+
+        if(data.fetchReply == undefined) {
+            data.fetchReply = true
+        }
+
         let res = await this.interaction.reply({
             content: data.content,
             embeds: data.embeds,

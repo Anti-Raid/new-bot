@@ -3,6 +3,7 @@ import { AutocompleteContext, CommandContext, ContextReply } from "./context";
 import { Logger } from "./logger";
 import { readdirSync } from "node:fs";
 import { config } from "./config";
+import { Permission, createGuildIfNotExists, getUserPermissions } from "./common/guilds/guildBase";
 
 export class FinalResponse {
     private dummyResponse: boolean // If true, then there is no final response (all processing is done in the command itself)
@@ -57,8 +58,8 @@ export enum BotStaffPerms {
 }
 
 export interface Command {
-    userPerms: PermissionsBitField[];
-    botPerms: PermissionsBitField[];
+    userPerms: Permission[];
+    botPerms: (PermissionsBitField | bigint)[];
     botStaffPerms?: BotStaffPerms[];
     interactionData: SlashCommandBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">;
     onLoad?: () => Promise<void>;
@@ -216,18 +217,40 @@ export class AntiRaid extends Client {
      */
     private async handlePermissions(ctx: CommandContext | AutocompleteContext, command: Command) {
         if(command.userPerms.length > 0) {
-            if(!ctx.interaction.memberPermissions.has(command.userPerms)) {
+            if(!ctx.interaction.guild) {
                 if(ctx instanceof CommandContext) {
                     await ctx.reply({
                         embeds: [
                             new EmbedBuilder()
-                                .setTitle("Insufficient Permissions")
+                                .setTitle("Guild Only")
                                 .setDescription(
-                                    `You do not have the required permissions to run this command. You need the following permissions: \`${command.userPerms.join(", ")}\``
+                                    `This command can only be used in a guild.`
                                 )
                                 .setColor(Colors.Red)
                         ]
                     });
+                }
+                return false;
+            }
+
+            await createGuildIfNotExists(ctx.interaction.guild)
+            let userPermsInDb = await getUserPermissions(ctx.interaction.guild.id, ctx.interaction.user.id)
+            if(!userPermsInDb.hasAll(command.userPerms)) {
+                if(ctx instanceof CommandContext) {
+                    try {
+                        await ctx.reply({
+                            embeds: [
+                                new EmbedBuilder()
+                                    .setTitle("Insufficient Permissions")
+                                    .setDescription(
+                                        `You do not have the required permissions to run this command. You need the following permissions: \`${command.userPerms.join(", ")}\``
+                                    )
+                                    .setColor(Colors.Red)
+                            ]
+                        });
+                    } catch (err) {
+                        this.logger.error(`Command (${command.interactionData.name})`, "Error when handling error:", err);
+                    }
                 }
                 return false;
             }
@@ -260,11 +283,13 @@ export class AntiRaid extends Client {
     private async onInteraction(interaction: Interaction) {
         // Slash Command
         if (interaction.isChatInputCommand()) {
+            let ctx = new CommandContext(this, interaction)
+
             const command = this.commands.get(interaction.commandName);
     
             if (!command) {
                 try {
-                    await interaction.reply({
+                    await ctx.reply({
                         embeds: [
                             new EmbedBuilder()
                                 .setTitle("Command Unavailable")
@@ -272,7 +297,6 @@ export class AntiRaid extends Client {
                                     `The command \`${interaction.commandName}\` is not available at this time`
                                 )
                                 .setColor(Colors.Red)
-                                .toJSON(),
                         ]
                     });
                 } catch (error) {
@@ -281,13 +305,13 @@ export class AntiRaid extends Client {
                 return;
             }
 
-            let ctx = new CommandContext(this, interaction)
-
-            if(!this.handleBotStaffPerms(ctx, command.botStaffPerms)) {
+            let bsp = await this.handleBotStaffPerms(ctx, command.botStaffPerms)
+            if(!bsp) {
                 return
             }
 
-            if(!this.handlePermissions(ctx, command)) {
+            let pc = await this.handlePermissions(ctx, command)
+            if(!pc) {
                 return
             }
     
@@ -309,7 +333,7 @@ export class AntiRaid extends Client {
                                 new EmbedBuilder()
                                     .setTitle("An Error Occurred")
                                     .setDescription(
-                                        `An error occurred while executing the command \`${interaction.commandName}\``
+                                        `An error occurred while executing the command \`${interaction.commandName}\`: ${error?.toString()?.slice(0, 2000)}`
                                     )
                                     .setColor(Colors.Red)
                             ]
@@ -422,7 +446,19 @@ export class AntiRaid extends Client {
 
         this.on(Events.ShardError, (error, id) => this.logger.error("Discord", `Shard ${id} error`, error));
 
-        this.on(Events.InteractionCreate, this.onInteraction);        
+        this.on(Events.InteractionCreate, async (interaction) => {
+            try {
+                await this.onInteraction(interaction).catch(err => {
+                    this.logger.error("Discord", "Error when handling interaction", err)
+                })
+            } catch (err) {
+                this.logger.error("Discord", "Error when handling interaction", err)
+            }
+        });  
+                
+        process.on("uncaughtException", (e) => {
+            this.logger.error("Discord", "Uncaught Exception", e);
+        });        
 
         this.hasLoadedListeners = true
     }
