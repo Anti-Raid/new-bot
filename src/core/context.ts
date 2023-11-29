@@ -100,6 +100,8 @@ export class CommandContext {
             throw new Error("Cannot defer to an interaction that has already been responded to")
         }
         await this.interaction.deferReply(options);
+
+        this._replyState = ContextReplyStatus.Deferred;
     }
 }
 

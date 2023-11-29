@@ -3,55 +3,7 @@ import { Command, FinalResponse } from "../core/client";
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { addAuditLogEvent, addGuildAction, editAuditLogEvent } from "../core/common/guilds/auditor";
 import sql from "../core/db";
-
-const parseDuration = (duration: string | undefined): number => {
-    if(!duration) {
-        return 0
-    }
-
-    if(duration == "0") {
-        return 0
-    }
-
-	var units = {
-        // Days
-        'days': 86400,
-        'day': 86400,
-        'd': 86400,
-        // Hours
-        'hours': 3600,
-        'hour': 3600,
-        'hrs': 3600,
-        'hr': 3600,
-        'h': 3600, 
-        // Minutes
-        'minutes': 60,
-        'minute': 60,
-        'mins': 60,
-        'min': 60,
-        'm': 60, 
-        // Seconds
-        'seconds': 1,
-        'second': 1,
-        'secs': 1,
-        'sec': 1,
-        's': 1
-    };
-
-    let seconds = 0;
-
-    for (const [key, value] of Object.entries(units)) {
-        let regex = new RegExp(`([0-9]+)${key}`, "i")
-        let match = duration.match(regex)
-
-        if(match) {
-            let amount = parseInt(match[1])
-            seconds += amount * value
-        }
-    }
-
-	return seconds;
-}
+import { parseDuration } from "../core/common/utils";
 
 let command: Command = {
     userPerms: [PermissionsBitField.Flags.BanMembers],
@@ -97,6 +49,8 @@ let command: Command = {
         const reason = ctx.interaction.options.getString("reason");
         const duration = parseDuration(ctx.interaction.options.getString("duration"))
         const deleteMessagesTill = parseDuration(ctx.interaction.options.getString("delete_messages_till") || "7d")
+
+        await ctx.defer()
 
         let disallowDM = false;
         await sql.begin(async sql => {
