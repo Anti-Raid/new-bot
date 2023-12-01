@@ -23,6 +23,7 @@ interface Config {
     client_id: string,
     main_server: string,
     token: string,
+    splashtail_url: string,
     bot_lists: BotList[]
 }
 
@@ -35,6 +36,7 @@ const loadConfig = (): Config => {
     if(!parsed.client_id) throw new Error("client_id is required in config.yaml")
     if(!parsed.main_server) throw new Error("main_server is required in config.yaml")
     if(!parsed.token) throw new Error("token is required in config.yaml")
+    if(!parsed.splashtail_url) throw new Error("splashtail_url is required in config.yaml")
     if(!parsed.bot_lists) throw new Error("bot_lists is required in config.yaml")
 
     for (const botList of parsed.bot_lists) {
@@ -54,6 +56,7 @@ const loadConfig = (): Config => {
         client_id: parsed.client_id,
         main_server: parsed.main_server,
         token: parsed.token,
+        splashtail_url: parsed.splashtail_url,
         bot_lists: parsed.bot_lists
     }
 }
